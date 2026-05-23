@@ -1,3 +1,7 @@
+import sys
+
+sys.stdout.reconfigure(encoding='utf-8')
+
 from import_danych import Import_Static_Data
 from modele import LinearModel, PolynomialModel
 from rysowanie import PlotData

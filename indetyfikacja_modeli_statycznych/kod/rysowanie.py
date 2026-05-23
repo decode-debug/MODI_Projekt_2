@@ -26,6 +26,7 @@ class PlotData:
         """Dopasowuje układ i zapisuje rysunek do pliku PNG."""
         fig.tight_layout()
         fig.savefig(os.path.join(save_dir, fname), dpi=150)
+        plt.close(fig)
         return fig
 
     @staticmethod
@@ -75,7 +76,7 @@ class PlotData:
     def _plot_model_vs_verification(y_wer: np.ndarray, y_hat: np.ndarray,
                                     idx: np.ndarray, suptitle: str,
                                     mse: float, rmse: float) -> plt.Figure:
-        """Dwa subploty: wyjĹ›cie modelu vs dane + bĹ‚Ä…d predykcji."""
+        """Dwa subploty: wyjście modelu vs dane + błąd predykcji."""
         fig, (ax_out, ax_err) = plt.subplots(2, 1, figsize=(10, 6))
         fig.suptitle(suptitle)
         ax_out.plot(idx, y_wer, 'b.-', markersize=4, label='Dane y')
@@ -87,7 +88,7 @@ class PlotData:
         ax_out.grid(True)
         ax_err.stem(idx, y_wer - y_hat, linefmt='grey', markerfmt='ko', basefmt='k-')
         ax_err.axhline(0, color='k', linewidth=0.8)
-        ax_err.set(xlabel='Numer próbki', ylabel='e = y â’ Ĺ·', title='Błąd predykcji')
+        ax_err.set(xlabel='Numer próbki', ylabel='e = y - ŷ', title='Błąd predykcji')
         ax_err.grid(True)
         return fig
 
@@ -98,9 +99,9 @@ class PlotData:
         lims = [min(y_true.min(), y_pred.min()) - 0.1,
                 max(y_true.max(), y_pred.max()) + 0.1]
         fig, ax = plt.subplots(figsize=(6, 6))
-        ax.plot(lims, lims, 'r--', linewidth=1.2, label='Idealny model (y = Ĺ·)')
+        ax.plot(lims, lims, 'r--', linewidth=1.2, label='Idealny model (y = ŷ)')
         ax.scatter(y_true, y_pred, s=20, color='steelblue', alpha=0.7, label='Dane weryf.')
-        ax.set(xlabel='y  (dane rzeczywiste)', ylabel='Ĺ·  (wyjĹ›cie modelu)', title=title)
+        ax.set(xlabel='y  (dane rzeczywiste)', ylabel='ŷ  (wyjście modelu)', title=title)
         ax.set_aspect('equal', 'box')
         ax.legend()
         ax.grid(True)
