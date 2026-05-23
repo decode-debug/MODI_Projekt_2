@@ -19,6 +19,8 @@ class MNKSolver:
         for k in range(n):
             pivot = k + np.argmax(np.abs(A[k:, k]))
             A[[k, pivot]], b[[k, pivot]] = A[[pivot, k]].copy(), b[[pivot, k]].copy()
+            if abs(A[k, k]) < 1e-12:       # macierz osobliwa (układ nieoznaczony)
+                return np.full(n, np.nan)
             for i in range(k + 1, n):
                 f = A[i, k] / A[k, k]
                 A[i, k:] -= f * A[k, k:]
@@ -106,3 +108,99 @@ class ARXModel:
         b_str = '  '.join(f'{b[i]:+.4f}·u(k-{i+1})' for i in range(self.nB))
         a_str = '  '.join(f'{a[i]:+.4f}·y(k-{i+1})' for i in range(self.nA))
         return f"ARX(nA={self.nA}, nB={self.nB}):  y(k) = {b_str}  {a_str}"
+
+
+class NARXModel:
+    """
+    Dynamiczny model wielomianowy NARX rzędu (nA, nB) stopnia deg:
+
+        y(k) = Σ_{i=1}^{nB} Σ_{p=1}^{deg} w_{i,p}·u(k-i)^p
+             + Σ_{i=1}^{nA} Σ_{p=1}^{deg} w'_{i,p}·y(k-i)^p
+
+    Parametry wyznaczane MNK z solverem eliminacji Gaussa.
+    Układ kolumn theta: [u(k-1)^1, u(k-1)^2, …, u(k-nB)^deg,
+                         y(k-1)^1, y(k-1)^2, …, y(k-nA)^deg]
+    """
+
+    _POW_SYM = {1: '', 2: '²', 3: '³', 4: '⁴'}
+
+    def __init__(self, nA: int, nB: int, deg: int):
+        if nA < 1 or nB < 1 or deg < 1:
+            raise ValueError("nA, nB >= 1 i deg >= 1.")
+        self.nA  = nA
+        self.nB  = nB
+        self.deg = deg
+        self._theta: np.ndarray | None = None   # długość = (nB + nA) * deg
+
+    # ── Prywatne ─────────────────────────────────────────────────────────────
+
+    def _build_regressor(self, u: np.ndarray, y: np.ndarray) -> tuple:
+        """Buduje macierz regresji Phi i offset n = max(nA, nB)."""
+        n    = max(self.nA, self.nB)
+        rows = len(u) - n
+        pows = np.arange(1, self.deg + 1)  # [1, 2, ..., deg]
+
+        # u_lags[k, i] = u[k+n-i-1], shape (rows, nB)
+        u_lags = np.column_stack([u[n-i-1:n-i-1+rows] for i in range(self.nB)])
+        # y_lags[k, i] = y[k+n-i-1], shape (rows, nA)
+        y_lags = np.column_stack([y[n-i-1:n-i-1+rows] for i in range(self.nA)])
+
+        # Broadcasting: (rows, nX, 1)^(1, 1, deg) → (rows, nX, deg) → (rows, nX*deg)
+        u_pows = (u_lags[:, :, None] ** pows).reshape(rows, self.nB * self.deg)
+        y_pows = (y_lags[:, :, None] ** pows).reshape(rows, self.nA * self.deg)
+
+        return np.hstack([u_pows, y_pows]), n
+
+    # ── Publiczny interfejs ───────────────────────────────────────────────────
+
+    def fit(self, u_ucz: np.ndarray, y_ucz: np.ndarray) -> 'NARXModel':
+        """Trenuje model MNK; zwraca self (fluent API)."""
+        Phi, n = self._build_regressor(u_ucz, y_ucz)
+        self._theta = MNKSolver.solve(Phi, y_ucz[n:])
+        return self
+
+    def predict(self, u: np.ndarray, y: np.ndarray,
+                recursive: bool = False) -> tuple:
+        """
+        Predykcja modelu. Zwraca (y_hat, n).
+
+          recursive=False – bez rekurencji: regressor używa mierzonych y
+          recursive=True  – z rekurencją (symulacja): używa własnych ŷ
+        """
+        if self._theta is None:
+            raise RuntimeError("Model niewyuczony – wywołaj fit() przed predict().")
+        n = max(self.nA, self.nB)
+
+        if not recursive:
+            Phi, n = self._build_regressor(u, y)
+            return Phi @ self._theta, n
+
+        N    = len(u)
+        n    = max(self.nA, self.nB)
+        pows = np.arange(1, self.deg + 1)  # precomputed once
+        y_hat = np.zeros(N)
+        y_hat[:n] = y[:n]
+        for k in range(n, N):
+            u_lags_k = np.array([u[k-i-1] for i in range(self.nB)])
+            y_lags_k = np.array([y_hat[k-i-1] for i in range(self.nA)])
+            # (nX, deg) broadcasting, then flatten → regressor vector
+            u_pows = (u_lags_k[:, None] ** pows).ravel()  # (nB*deg,)
+            y_pows = (y_lags_k[:, None] ** pows).ravel()  # (nA*deg,)
+            val = float(np.dot(np.concatenate([u_pows, y_pows]), self._theta))
+            y_hat[k] = val if np.isfinite(val) else 0.0
+        return y_hat[n:], n
+
+    def evaluate(self, y_true: np.ndarray, y_pred: np.ndarray) -> dict:
+        if not np.all(np.isfinite(y_pred)):
+            return {'mse': np.inf, 'rmse': np.inf}
+        mse = float(np.mean((y_true - y_pred) ** 2))
+        return {'mse': mse, 'rmse': float(np.sqrt(mse))}
+
+    @property
+    def n_params(self) -> int:
+        return (self.nB + self.nA) * self.deg
+
+    def __str__(self) -> str:
+        if self._theta is None:
+            return f"NARX(nA={self.nA}, nB={self.nB}, deg={self.deg}, niewyuczony)"
+        return f"NARX(nA={self.nA}, nB={self.nB}, deg={self.deg})"

@@ -11,7 +11,8 @@ class PlotDynamic:
     def __init__(self, out_dir: str):
         self._dir_surowe = os.path.join(str(out_dir), 'dane_surowe')
         self._dir_arx    = os.path.join(str(out_dir), 'modele_arx')
-        for d in [self._dir_surowe, self._dir_arx]:
+        self._dir_narx   = os.path.join(str(out_dir), 'modele_narx')
+        for d in [self._dir_surowe, self._dir_arx, self._dir_narx]:
             os.makedirs(d, exist_ok=True)
 
     def _order_dir(self, order: int) -> str:
@@ -25,6 +26,7 @@ class PlotDynamic:
     def _save(fig: plt.Figure, save_dir: str, fname: str) -> plt.Figure:
         fig.tight_layout()
         fig.savefig(os.path.join(save_dir, fname), dpi=150)
+        plt.close(fig)
         return fig
 
     @staticmethod
@@ -145,6 +147,71 @@ class PlotDynamic:
                      '(NR = bez rekurencji, R = z rekurencją, zielony = najniższy MSE wer R)',
                      pad=14, fontsize=10, fontweight='bold')
         return self._save(fig, self._dir_arx, 'tabela_metryk_arx.png')
+
+    # ══ Modele NARX ══════════════════════════════════════════════════════
+
+    def _narx_dir(self, nA: int, deg: int) -> str:
+        path = os.path.join(self._dir_narx, f'nA{nA}_deg{deg}')
+        os.makedirs(path, exist_ok=True)
+        return path
+
+    def plot_narx_verification_results(self, y_wer: np.ndarray, y_hat: np.ndarray,
+                                       n: int, mse: float, rmse: float,
+                                       nA: int, deg: int,
+                                       recursive: bool) -> plt.Figure:
+        mode   = 'z rekurencją' if recursive else 'bez rekurencji'
+        suffix = 'r' if recursive else 'nr'
+        idx    = np.arange(n + 1, n + 1 + len(y_wer))
+        fig = self._plot_model_vs_verification(
+            y_wer, y_hat, idx,
+            f'NARX(nA={nA}, deg={deg}) – zbiór weryfikujący ({mode})', mse, rmse)
+        return self._save(fig, self._narx_dir(nA, deg),
+                          f'nA{nA}_deg{deg}_{suffix}_weryfikacja.png')
+
+    def plot_narx_scatter(self, y_wer: np.ndarray, y_hat: np.ndarray,
+                          nA: int, deg: int, recursive: bool) -> plt.Figure:
+        mode   = 'z rekurencją' if recursive else 'bez rekurencji'
+        suffix = 'r' if recursive else 'nr'
+        fig = self._plot_scatter_comparison(
+            y_wer, y_hat,
+            f'Relacja danych weryf. vs NARX(nA={nA}, deg={deg}) – {mode}')
+        return self._save(fig, self._narx_dir(nA, deg),
+                          f'nA{nA}_deg{deg}_{suffix}_scatter.png')
+
+    def plot_narx_metrics_table(self, results: list) -> plt.Figure:
+        """Tabela MSE/RMSE dla wszystkich konfiguracji NARX."""
+        col_labels = ['nA', 'deg',
+                      'MSE ucz NR', 'RMSE ucz NR', 'MSE wer NR', 'RMSE wer NR',
+                      'MSE ucz R',  'RMSE ucz R',  'MSE wer R',  'RMSE wer R']
+        table_data = [
+            [str(r['nA']), str(r['deg']),
+             f'{r["mse_ucz_nr"]:.4f}', f'{r["rmse_ucz_nr"]:.4f}',
+             f'{r["mse_wer_nr"]:.4f}', f'{r["rmse_wer_nr"]:.4f}',
+             f'{r["mse_ucz_r"]:.4f}',  f'{r["rmse_ucz_r"]:.4f}',
+             f'{r["mse_wer_r"]:.4f}',  f'{r["rmse_wer_r"]:.4f}']
+            for r in results
+        ]
+        n_rows = len(results)
+        fig, ax = plt.subplots(figsize=(18, n_rows * 0.55 + 1.8))
+        ax.axis('off')
+        tbl = ax.table(cellText=table_data, colLabels=col_labels,
+                       loc='center', cellLoc='center')
+        tbl.auto_set_font_size(False)
+        tbl.set_fontsize(9)
+        tbl.scale(1.2, 1.6)
+        for j in range(len(col_labels)):
+            tbl[(0, j)].set_facecolor('#C55A11')
+            tbl[(0, j)].set_text_props(color='white', fontweight='bold')
+        finite_results = [r for r in results if np.isfinite(r['mse_wer_r'])]
+        if finite_results:
+            best_r = min(finite_results, key=lambda r: r['mse_wer_r'])
+            best_idx = results.index(best_r)
+            for j in range(len(col_labels)):
+                tbl[(best_idx + 1, j)].set_facecolor('#E2EFDA')
+        ax.set_title('Metryki błędów – modele NARX\n'
+                     '(NR = bez rekurencji, R = z rekurencją, zielony = najniższy MSE wer R)',
+                     pad=14, fontsize=10, fontweight='bold')
+        return self._save(fig, self._dir_narx, 'tabela_metryk_narx.png')
 
     @staticmethod
     def show() -> None:
