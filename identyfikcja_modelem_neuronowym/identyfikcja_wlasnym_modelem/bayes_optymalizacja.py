@@ -135,14 +135,9 @@ class BayesOptymalizator:
         return score, trainer
 
     def optymalizuj(self):
-        print("=" * 62)
-        print("  Optymalizacja Bayesowska – szukam najlepszej architektury")
-        print("=" * 62)
-
         for iteration in range(1, self.n_iterations + 1):
             if iteration <= self.n_random_starts:
                 config = self._random_config()
-                how    = "losowo"
             else:
                 candidates = [self._random_config() for _ in range(self.n_candidates)]
                 encoded    = np.array([self._encode(c) for c in candidates])
@@ -152,31 +147,9 @@ class BayesOptymalizator:
                 means, stds = self.gp.predict(encoded)
                 ucb_scores  = acquisition_ucb(means, stds)
                 config      = candidates[int(np.argmax(ucb_scores))]
-                how         = "GP-UCB"
 
-            nodes_str = ', '.join(
-                str(config[f'nodes_{i+1}']) for i in range(config['num_layers'])
-            )
-            print(
-                f"[{iteration:>2}/{self.n_iterations}] {how:<8} | "
-                f"layers={config['num_layers']}, nodes=[{nodes_str}], "
-                f"lr={config['lr']:.5f}, ep={config['epochs']}, bs={config['batch_size']}"
-            )
             score, trainer = self._evaluate(config)
-            print(f"  → val MSE = {-score:.6f}")
             self.history.append({'config': config, 'score': score, 'trainer': trainer})
 
         best = max(self.history, key=lambda h: h['score'])
-        nodes_str = ', '.join(
-            str(best['config'][f'nodes_{i+1}']) for i in range(best['config']['num_layers'])
-        )
-        print("\n" + "=" * 62)
-        print("  Najlepsza konfiguracja:")
-        print(f"    Warstwy ukryte  : {best['config']['num_layers']}")
-        print(f"    Neurony/warstwa : [{nodes_str}]")
-        print(f"    Learning rate   : {best['config']['lr']:.5f}")
-        print(f"    Epoki           : {best['config']['epochs']}")
-        print(f"    Batch size      : {best['config']['batch_size']}")
-        print(f"    Val MSE         : {-best['score']:.6f}")
-        print("=" * 62)
         return best['config'], -best['score'], best['trainer']
