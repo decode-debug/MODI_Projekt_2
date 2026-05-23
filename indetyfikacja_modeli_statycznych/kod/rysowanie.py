@@ -42,7 +42,7 @@ class PlotData:
         """Dopasowuje układ i zapisuje rysunek do pliku PDF."""
         _apply_pl_format(fig)
         fig.tight_layout()
-        fig.savefig(os.path.join(save_dir, fname.replace('.png', '.pdf')))
+        fig.savefig(os.path.join(save_dir, fname.replace('.png', '.svg')))
         plt.close(fig)
         return fig
 
