@@ -216,3 +216,47 @@ class PlotDynamic:
     @staticmethod
     def show() -> None:
         plt.show()
+
+    # ══ Charakterystyka statyczna z modelu NARX ════════════════════════════
+
+    def plot_static_characteristic_narx(self,
+                                        u_curve: np.ndarray, y_curve: np.ndarray,
+                                        u_stat: np.ndarray, y_stat: np.ndarray,
+                                        u_pts: np.ndarray, y_pts_data: np.ndarray,
+                                        y_pts_model: np.ndarray,
+                                        nA: int, deg: int) -> plt.Figure:
+        """Wykres charakterystyki statycznej wyznaczonej metodą symulacyjną."""
+        fig, ax = plt.subplots(figsize=(9, 6))
+
+        # Dane statyczne (zadanie 1)
+        ax.scatter(u_stat, y_stat, s=14, color='steelblue', alpha=0.45,
+                   label='Dane statyczne (zad. 1)', zorder=2)
+
+        # Krzywa charakterystyki z modelu NARX
+        mask = np.isfinite(y_curve)
+        ax.plot(u_curve[mask], y_curve[mask], 'r-', linewidth=2,
+                label=f'Char. stat. NARX(nA={nA}, deg={deg})', zorder=3)
+
+        # 3 punkty weryfikacyjne
+        ax.scatter(u_pts, y_pts_data, s=90, marker='o', color='dodgerblue',
+                   edgecolors='navy', linewidths=1.2, zorder=5,
+                   label='Dane stat. – 3 pkt weryf.')
+        ax.scatter(u_pts, y_pts_model, s=90, marker='^', color='tomato',
+                   edgecolors='darkred', linewidths=1.2, zorder=5,
+                   label='Model NARX – 3 pkt weryf.')
+
+        # Odcinki błędu między parami punktów
+        for u, yd, ym in zip(u_pts, y_pts_data, y_pts_model):
+            ax.plot([u, u], [yd, ym], 'k--', linewidth=0.9, zorder=4)
+            ax.annotate(f'|Δ|={abs(yd - ym):.3f}',
+                        xy=(u, (yd + ym) / 2),
+                        xytext=(6, 0), textcoords='offset points',
+                        fontsize=8, color='#333333')
+
+        ax.set(xlabel='u', ylabel='y',
+               title=f'Charakterystyka statyczna – metoda symulacyjna\n'
+                     f'NARX(nA={nA}, nB={nA}, deg={deg})')
+        ax.legend(fontsize=9)
+        ax.grid(True)
+        return self._save(fig, self._dir_narx,
+                          f'charakterystyka_statyczna_nA{nA}_deg{deg}.png')

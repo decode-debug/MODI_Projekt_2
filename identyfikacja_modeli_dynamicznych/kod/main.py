@@ -9,11 +9,15 @@ from import_danych      import ImportDynamicData
 from modele_dynamiczne  import ARXModel, NARXModel
 from rysowanie          import PlotDynamic
 
+pretrained = True
+
 ORDERS       = [1, 2, 3]          # rzędy modeli ARX
-# NARX_ORDERS  = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50]          # rzędy dynamiki NARX
-# NARX_DEGREES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50]          # stopnie wielomianów NARX
-NARX_ORDERS  = [13, 14, 15, 16, 17, 18, 19, 20]   # zawężone wokół nA=16 (najlepszy z drugiego przeszukiwania)
-NARX_DEGREES = [3, 4, 5, 6]                       # zawężone wokół deg=4
+if pretrained == False:  # szerokie przeszukiwanie
+    NARX_ORDERS  = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50]          # rzędy dynamiki NARX
+    NARX_DEGREES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50]          # stopnie wielomianów NARX
+if pretrained == True:  # zawężone wokół n=16 (najlepszy z pierwszego przeszukiwania)
+    NARX_ORDERS  = [13, 14, 15, 16, 17, 18, 19, 20]   # zawężone wokół nA=16 (najlepszy z drugiego przeszukiwania)
+    NARX_DEGREES = [3, 4, 5, 6]                       # zawężone wokół deg=4
 
 def wyswietl_info(dane: ImportDynamicData) -> None:
     print(f"Zbiór uczący    : {dane.N_ucz} próbek")
@@ -150,6 +154,46 @@ def drukuj_tabele_metryk_narx(results: list) -> None:
               f"MSE={best['mse_wer_r']:.6f}  RMSE={best['rmse_wer_r']:.6f}")
 
 
+def symulacja_statyczna(model: NARXModel, u_star: float, N_sim: int = 600) -> float:
+    """Wyznacza stan ustalony modelu dla stałego wejścia u* metodą symulacyjną."""
+    u = np.full(N_sim, u_star)
+    y_hat, _ = model.predict(u, np.zeros(N_sim), recursive=True)
+    val = float(y_hat[-1])
+    return val if np.isfinite(val) else np.nan
+
+
+def charakterystyka_statyczna_narx(dane: ImportDynamicData, plotter: PlotDynamic,
+                                   model: NARXModel) -> None:
+    """Wyznacza i rysuje charakterystykę statyczną y(u) na podstawie modelu NARX."""
+    stat_path = Path(__file__).resolve().parents[2] / 'danestat28' / 'danestat28.txt'
+    stat_data = np.loadtxt(stat_path)
+    u_stat = stat_data[:, 0]
+    y_stat = stat_data[:, 1]
+
+    # Gęsta siatka u do wykreślenia krzywej
+    u_curve = np.linspace(u_stat.min(), u_stat.max(), 200)
+    print(f"\n── Charakterystyka statyczna NARX(nA={model.nA}, deg={model.deg}) "
+          f"– metoda symulacyjna ──")
+    y_curve = np.array([symulacja_statyczna(model, u) for u in u_curve])
+
+    # 3 punkty weryfikacyjne: min u, mediana u, max u
+    q_vals   = [np.percentile(u_stat, p) for p in [10, 50, 90]]
+    pts_idx  = [int(np.argmin(np.abs(u_stat - q))) for q in q_vals]
+    u_pts       = u_stat[pts_idx]
+    y_pts_data  = y_stat[pts_idx]
+    y_pts_model = np.array([symulacja_statyczna(model, u) for u in u_pts])
+
+    print(f"\n{'u*':>10} {'y* (dane)':>12} {'y* (NARX)':>12} {'|błąd|':>10}")
+    print('─' * 50)
+    for u, yd, ym in zip(u_pts, y_pts_data, y_pts_model):
+        print(f"{u:>10.4f} {yd:>12.4f} {ym:>12.4f} {abs(yd - ym):>10.4f}")
+
+    plotter.plot_static_characteristic_narx(
+        u_curve, y_curve, u_stat, y_stat,
+        u_pts, y_pts_data, y_pts_model,
+        model.nA, model.deg)
+
+
 def main() -> None:
     dane    = ImportDynamicData()
     plotter = PlotDynamic(dane.out_dir)
@@ -178,6 +222,15 @@ def main() -> None:
 
     drukuj_tabele_metryk_narx(narx_results)
     plotter.plot_narx_metrics_table(narx_results)
+
+    # Charakterystyka statyczna najlepszego modelu NARX
+    finite = [r for r in narx_results if np.isfinite(r['mse_wer_r'])]
+    if finite:
+        best = min(finite, key=lambda r: r['mse_wer_r'])
+        print(f"\nNajlepszy model: NARX(nA={best['nA']}, deg={best['deg']}) "
+              f"→ MSE wer R = {best['mse_wer_r']:.6f}")
+        charakterystyka_statyczna_narx(dane, plotter, best['model'])
+
     PlotDynamic.show()
 
 
