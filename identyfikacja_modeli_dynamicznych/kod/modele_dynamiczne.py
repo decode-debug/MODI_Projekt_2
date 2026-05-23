@@ -2,14 +2,20 @@ import numpy as np
 
 
 class MNKSolver:
-    """Solver MNK – eliminacja Gaussa z częściowym wyborem pivotu."""
+    """Solver Metody Najmniejszych Kwadratów."""
 
     @staticmethod
     def solve(Phi: np.ndarray, y: np.ndarray) -> np.ndarray:
-        """Rozwiązuje układ normalny (Phi^T Phi) θ = Phi^T y – bez lstsq/solve."""
+        """
+        Rozwiązuje układ normalny (Phi^T Phi) θ = Phi^T y
+        metodą eliminacji Gaussa z częściowym wyborem pivotu.
+        Phi: macierz regresorów (N x M)
+        y:   wektor wartości docelowych (N,)
+        """
         A = (Phi.T @ Phi).astype(float)
         b = (Phi.T @ y).astype(float)
         n = len(b)
+        # Eliminacja w przód z częściowym wyborem pivotu
         for k in range(n):
             pivot = k + np.argmax(np.abs(A[k:, k]))
             A[[k, pivot]], b[[k, pivot]] = A[[pivot, k]].copy(), b[[pivot, k]].copy()
@@ -17,11 +23,11 @@ class MNKSolver:
                 f = A[i, k] / A[k, k]
                 A[i, k:] -= f * A[k, k:]
                 b[i]     -= f * b[k]
+        # Podstawianie wstecz
         theta = np.zeros(n)
         for i in range(n - 1, -1, -1):
             theta[i] = (b[i] - A[i, i+1:] @ theta[i+1:]) / A[i, i]
         return theta
-
 
 class ARXModel:
     """
