@@ -1,6 +1,17 @@
 ﻿import os
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
+
+
+def _apply_pl_format(fig: plt.Figure) -> None:
+    """Zamienia separatory dziesiętne na przecinek (notacja polska) dla osi liniowych."""
+    fmt = mticker.FuncFormatter(lambda x, _: f'{x:g}'.replace('.', ','))
+    for ax in fig.axes:
+        if ax.get_xscale() == 'linear':
+            ax.xaxis.set_major_formatter(fmt)
+        if ax.get_yscale() == 'linear':
+            ax.yaxis.set_major_formatter(fmt)
 
 
 class PlotData:
@@ -24,6 +35,7 @@ class PlotData:
     @staticmethod
     def _save(fig: plt.Figure, save_dir: str, fname: str) -> plt.Figure:
         """Dopasowuje układ i zapisuje rysunek do pliku PNG."""
+        _apply_pl_format(fig)
         fig.tight_layout()
         fig.savefig(os.path.join(save_dir, fname), dpi=150)
         plt.close(fig)

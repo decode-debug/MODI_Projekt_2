@@ -10,6 +10,17 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')   # backend bez GUI – zapis do pliku
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
+
+
+def _apply_pl_format(fig: plt.Figure) -> None:
+    """Zamienia separatory dziesiętne na przecinek (notacja polska) dla osi liniowych."""
+    fmt = mticker.FuncFormatter(lambda x, _: f'{x:g}'.replace('.', ','))
+    for ax in fig.axes:
+        if ax.get_xscale() == 'linear':
+            ax.xaxis.set_major_formatter(fmt)
+        if ax.get_yscale() == 'linear':
+            ax.yaxis.set_major_formatter(fmt)
 
 
 class PlotNeural:
@@ -35,6 +46,7 @@ class PlotNeural:
 
     @staticmethod
     def _save(fig: plt.Figure, save_dir: str, fname: str) -> plt.Figure:
+        _apply_pl_format(fig)
         fig.tight_layout()
         fig.savefig(os.path.join(save_dir, fname), dpi=150)
         plt.close(fig)
