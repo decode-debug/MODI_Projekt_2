@@ -1,63 +1,52 @@
-import os
-import numpy as np
-import matplotlib.pyplot as plt
+from import_danych import Import_Static_Data
+from modele import LinearModel
+from rysowanie import PlotData
 
-# Ścieżki względem lokalizacji skryptu
-_dir = os.path.dirname(os.path.abspath(__file__))
-_data_path = os.path.join(_dir, '..', '..', 'danestat28', 'danestat28.txt')
-_out_dir   = os.path.join(_dir, '..', 'obrazki_charakterystyki_statycznej')
-os.makedirs(_out_dir, exist_ok=True)
 
-# Wczytanie danych
-data = np.loadtxt(_data_path)
+def main():
+    # ── 1. Wczytanie i podział danych ─────────────────────────────────────────
+    dane = Import_Static_Data(split=0.6)
+    print(f'Łącznie próbek : {dane.N}')
+    print(f'Zbiór uczący   : {dane.N_uczacy} ({dane.N_uczacy / dane.N * 100:.0f} %)')
+    print(f'Zbiór weryf.   : {dane.N_weryf}  ({dane.N_weryf  / dane.N * 100:.0f} %)')
 
-u = data[:, 0]  # sygnał wejściowy
-y = data[:, 1]  # sygnał wyjściowy
+    # ── 2. Trenowanie modelu liniowego (własny solver MNK) ────────────────────
+    model = LinearModel()
+    model.fit(dane.u_ucz, dane.y_ucz)
+    print(f'\n{model}')
 
-N = len(u)
-N_uczacy = int(np.ceil(0.6 * N))   # 60% -> 120 próbek
-N_weryf  = N - N_uczacy             # 40% -> 80 próbek
+    # ── 3. Ewaluacja ──────────────────────────────────────────────────────────
+    wyniki_ucz = model.evaluate(dane.u_ucz, dane.y_ucz)
+    wyniki_wer = model.evaluate(dane.u_wer, dane.y_wer)
 
-u_ucz = u[:N_uczacy]
-y_ucz = y[:N_uczacy]
+    print(f'\nBłędy – zbiór uczący   (N={dane.N_uczacy}): '
+          f'MSE = {wyniki_ucz["mse"]:.6f}   RMSE = {wyniki_ucz["rmse"]:.6f}')
+    print(f'Błędy – zbiór weryf.  (N={dane.N_weryf}):  '
+          f'MSE = {wyniki_wer["mse"]:.6f}   RMSE = {wyniki_wer["rmse"]:.6f}')
 
-u_wer = u[N_uczacy:]
-y_wer = y[N_uczacy:]
+    # ── 4. Rysowanie ──────────────────────────────────────────────────────────
+    plotter = PlotData(dane.out_dir)
 
-# ── Rysunek 1: charakterystyka statyczna (y = f(u)) ─────────────────────────
-fig2, ax2 = plt.subplots(figsize=(7, 5))
-ax2.plot(u, y, 'ko', markersize=4)
-ax2.set_xlabel('u')
-ax2.set_ylabel('y')
-ax2.set_title('Charakterystyka statyczna y = f(u) – wszystkie dane')
-ax2.grid(True)
-fig2.tight_layout()
-fig2.savefig(os.path.join(_out_dir, 'charakterystyka_statyczna_wszystkie.png'), dpi=150)
+    # dane surowe
+    plotter.plot_all_data(dane.u, dane.y)
+    plotter.plot_static_characteristic(dane.u, dane.y)
+    plotter.plot_training_data(dane.u_ucz, dane.y_ucz)
+    plotter.plot_training_characteristic(dane.u_ucz, dane.y_ucz)
+    plotter.plot_verification_data(dane.u_wer, dane.y_wer, dane.N_uczacy)
+    plotter.plot_verification_characteristic(dane.u_wer, dane.y_wer)
 
-# ── Rysunek 2: charakterystyka statyczna – zbiór uczący ─────────────────────
-fig4, ax4 = plt.subplots(figsize=(7, 5))
-ax4.plot(u_ucz, y_ucz, 'bo', markersize=4, label='zbiór uczący')
-ax4.set_xlabel('u')
-ax4.set_ylabel('y')
-ax4.set_title('Charakterystyka statyczna – zbiór uczący (60 %)')
-ax4.grid(True)
-ax4.legend()
-fig4.tight_layout()
-fig4.savefig(os.path.join(_out_dir, 'charakterystyka_statyczna_uczace.png'), dpi=150)
+    # wyniki modelu
+    plotter.plot_model_characteristic(dane.u, dane.y, model.a0, model.a1)
+    plotter.plot_verification_results(
+        dane.y_wer, wyniki_wer['y_pred'],
+        dane.N_uczacy,
+        wyniki_wer['mse'], wyniki_wer['rmse']
+    )
+    plotter.plot_scatter(dane.y_wer, wyniki_wer['y_pred'])
 
-# ── Rysunek 3: charakterystyka statyczna – zbiór weryfikujący ───────────────
-fig6, ax6 = plt.subplots(figsize=(7, 5))
-ax6.plot(u_wer, y_wer, 'rs', markersize=4, label='zbiór weryfikujący')
-ax6.set_xlabel('u')
-ax6.set_ylabel('y')
-ax6.set_title('Charakterystyka statyczna – zbiór weryfikujący (40 %)')
-ax6.grid(True)
-ax6.legend()
-fig6.tight_layout()
-fig6.savefig(os.path.join(_out_dir, 'charakterystyka_statyczna_weryfikujace.png'), dpi=150)
+    PlotData.show()
 
-plt.show()
 
-print(f'Łącznie próbek : {N}')
-print(f'Zbiór uczący   : {N_uczacy} ({N_uczacy/N*100:.0f}%)')
-print(f'Zbiór weryf.   : {N_weryf} ({N_weryf/N*100:.0f}%)')
+if __name__ == '__main__':
+    main()
+
