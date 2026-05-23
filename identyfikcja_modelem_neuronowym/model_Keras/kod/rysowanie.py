@@ -53,7 +53,7 @@ class PlotNeural:
     def _save(fig: plt.Figure, save_dir: str, fname: str) -> plt.Figure:
         _apply_pl_format(fig)
         fig.tight_layout()
-        fig.savefig(os.path.join(save_dir, fname), dpi=150)
+        fig.savefig(os.path.join(save_dir, fname.replace('.png', '.pdf')))
         plt.close(fig)
         return fig
 
