@@ -85,7 +85,7 @@ def pokaz_architekture_3d(layer_sizes, activations):
     node_x, node_y, node_z           = [], [], []
     node_colors, node_sizes, node_labels = [], [], []
     edge_x, edge_y, edge_z           = [], [], []
-    layer_positions                   = []
+    layer_positions                  = []
 
     for col, (size, act) in enumerate(zip(layer_sizes, act_labels)):
         color    = LAYER_COLORS.get(act.lower(), '#EF553B')
@@ -154,7 +154,10 @@ def pokaz_architekture_3d(layer_sizes, activations):
 
     _ax = dict(showgrid=False, zeroline=False, showticklabels=False,
                showbackground=True, backgroundcolor=_DARK, gridcolor='#333')
+
     fig.update_layout(
+        width=50,   # <--- TUTAJ DODANE (Zwężenie szerokości do 750px)
+        height=50,  # <--- TUTAJ DODANE (Usztywnienie wysokości, żeby kula nie stała się jajem)
         title=dict(text='Architektura sieci (3D)', font=dict(size=20, color='white')),
         scene=dict(
             xaxis=dict(**_ax, title='Warstwy'),
@@ -180,7 +183,10 @@ def pokaz_postep_trenowania(loss_history, val_mse_history):
                              line=dict(color='#EF553B')), row=1, col=2)
     fig.update_xaxes(title_text='Checkpoint', gridcolor='#333')
     fig.update_yaxes(gridcolor='#333', type='log', tickformat='.2e')
-    fig.update_layout(title='Postęp trenowania (skala log)',
-                      plot_bgcolor=_DARK, paper_bgcolor=_DARK,
-                      font=dict(color='white'), height=400)
+
+    fig.update_layout(
+        width=50, # <--- TUTAJ DODANE (Zwężenie szerokości do 750px)
+        title='Postęp trenowania (skala log)',
+        plot_bgcolor=_DARK, paper_bgcolor=_DARK,
+        font=dict(color='white'), height=400)
     fig.show()
