@@ -23,6 +23,11 @@ def _apply_pl_format(fig: plt.Figure) -> None:
             ax.yaxis.set_major_formatter(fmt)
 
 
+def _fl(x: float, d: int = 4) -> str:
+    """Formatuje liczbę z przecinkiem jako separatorem dziesiętnym."""
+    return f'{x:.{d}f}'.replace('.', ',')
+
+
 class PlotNeural:
     """Rysuje i zapisuje wykresy dotyczące modeli neuronowych Keras."""
 
@@ -127,7 +132,7 @@ class PlotNeural:
         ax.plot(u_curve, y_curve, 'k-', linewidth=2, label=f'Model ({model_label})', zorder=3)
         ax.set(xlabel='u', ylabel='y',
                title=f'Charakterystyka statyczna – {model_label}\n'
-                     f'MSE ucz.={mse_ucz:.5f}  MSE wer.={mse_wer:.5f}')
+                     f'MSE ucz.={_fl(mse_ucz, 5)}  MSE wer.={_fl(mse_wer, 5)}')
         ax.legend(fontsize=9)
         ax.grid(True)
         return self._save(fig, self._size_dir(size_label), fname)
@@ -171,7 +176,7 @@ class PlotNeural:
         for bar in list(bars_ucz) + list(bars_wer):
             h = bar.get_height()
             ax.text(bar.get_x() + bar.get_width() / 2, h * 1.04,
-                    f'{h:.4f}', ha='center', va='bottom', fontsize=8)
+                    _fl(h), ha='center', va='bottom', fontsize=8)
 
         ax.set(xlabel='Rozmiar sieci', ylabel='MSE',
                title='Porównanie MSE najlepszych modeli neuronowych')
@@ -200,7 +205,7 @@ class PlotNeural:
             y_hat = exp['y_pred_wer']
             mse   = exp['mse_wer']
             ax.plot(idx, y_wer, 'b.-', markersize=2, linewidth=0.8, label='Dane y')
-            ax.plot(idx, y_hat, 'r-',  linewidth=1.5, label=f'Model  MSE={mse:.5f}')
+            ax.plot(idx, y_hat, 'r-',  linewidth=1.5, label=f'Model  MSE={_fl(mse, 5)}')
             ax.set(ylabel='y', title=exp['label'])
             ax.legend(fontsize=8, loc='upper right')
             ax.grid(True)

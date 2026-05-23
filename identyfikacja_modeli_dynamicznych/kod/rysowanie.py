@@ -14,6 +14,11 @@ def _apply_pl_format(fig: plt.Figure) -> None:
             ax.yaxis.set_major_formatter(fmt)
 
 
+def _fl(x: float, d: int = 4) -> str:
+    """Formatuje liczbę z przecinkiem jako separatorem dziesiętnym."""
+    return f'{x:.{d}f}'.replace('.', ',')
+
+
 class PlotDynamic:
     """Rysuje i zapisuje wykresy danych dynamicznych i wyników modeli ARX."""
 
@@ -65,7 +70,7 @@ class PlotDynamic:
         ax_out.plot(idx, y_hat, 'r-',  linewidth=1.5, label='Model $\\hat{y}$')
         ax_out.set(xlabel='Numer próbki', ylabel='y',
                    title=f'Wyjście modelu vs dane weryfikujące  '
-                         f'(MSE={mse:.4f}, RMSE={rmse:.4f})')
+                         f'(MSE={_fl(mse)}, RMSE={_fl(rmse)})')
         ax_out.legend()
         ax_out.grid(True)
         ax_err.stem(idx, y_wer - y_hat, linefmt='grey', markerfmt='ko', basefmt='k-')
@@ -135,10 +140,10 @@ class PlotDynamic:
                       'MSE ucz R',  'RMSE ucz R',  'MSE wer R',  'RMSE wer R']
         table_data = [
             [f'n={r["order"]}',
-             f'{r["mse_ucz_nr"]:.4f}', f'{r["rmse_ucz_nr"]:.4f}',
-             f'{r["mse_wer_nr"]:.4f}', f'{r["rmse_wer_nr"]:.4f}',
-             f'{r["mse_ucz_r"]:.4f}',  f'{r["rmse_ucz_r"]:.4f}',
-             f'{r["mse_wer_r"]:.4f}',  f'{r["rmse_wer_r"]:.4f}']
+             _fl(r['mse_ucz_nr']), _fl(r['rmse_ucz_nr']),
+             _fl(r['mse_wer_nr']), _fl(r['rmse_wer_nr']),
+             _fl(r['mse_ucz_r']),  _fl(r['rmse_ucz_r']),
+             _fl(r['mse_wer_r']),  _fl(r['rmse_wer_r'])]
             for r in results
         ]
         n_rows = len(results)
@@ -197,10 +202,10 @@ class PlotDynamic:
                       'MSE ucz R',  'RMSE ucz R',  'MSE wer R',  'RMSE wer R']
         table_data = [
             [str(r['nA']), str(r['deg']),
-             f'{r["mse_ucz_nr"]:.4f}', f'{r["rmse_ucz_nr"]:.4f}',
-             f'{r["mse_wer_nr"]:.4f}', f'{r["rmse_wer_nr"]:.4f}',
-             f'{r["mse_ucz_r"]:.4f}',  f'{r["rmse_ucz_r"]:.4f}',
-             f'{r["mse_wer_r"]:.4f}',  f'{r["rmse_wer_r"]:.4f}']
+             _fl(r['mse_ucz_nr']), _fl(r['rmse_ucz_nr']),
+             _fl(r['mse_wer_nr']), _fl(r['rmse_wer_nr']),
+             _fl(r['mse_ucz_r']),  _fl(r['rmse_ucz_r']),
+             _fl(r['mse_wer_r']),  _fl(r['rmse_wer_r'])]
             for r in results
         ]
         n_rows = len(results)
@@ -260,7 +265,7 @@ class PlotDynamic:
         # Odcinki błędu między parami punktów
         for u, yd, ym in zip(u_pts, y_pts_data, y_pts_model):
             ax.plot([u, u], [yd, ym], 'k--', linewidth=0.9, zorder=4)
-            ax.annotate(f'|Δ|={abs(yd - ym):.3f}',
+            ax.annotate(f'|Δ|={_fl(abs(yd - ym), 3)}',
                         xy=(u, (yd + ym) / 2),
                         xytext=(6, 0), textcoords='offset points',
                         fontsize=8, color='#333333')

@@ -14,6 +14,11 @@ def _apply_pl_format(fig: plt.Figure) -> None:
             ax.yaxis.set_major_formatter(fmt)
 
 
+def _fl(x: float, d: int = 4) -> str:
+    """Formatuje liczbę z przecinkiem jako separatorem dziesiętnym."""
+    return f'{x:.{d}f}'.replace('.', ',')
+
+
 class PlotData:
     """Rysuje i zapisuje wykresy danych statycznych i wyników modeli."""
 
@@ -95,7 +100,7 @@ class PlotData:
         ax_out.plot(idx, y_hat, 'r-',  linewidth=1.5, label='Model $\\hat{y}$')
         ax_out.set(xlabel='Numer próbki', ylabel='y',
                    title=f'Wyjście modelu na tle danych weryfikujących  '
-                         f'(MSE={mse:.4f}, RMSE={rmse:.4f})')
+                         f'(MSE={_fl(mse)}, RMSE={_fl(rmse)})')
         ax_out.legend()
         ax_out.grid(True)
         ax_err.stem(idx, y_wer - y_hat, linefmt='grey', markerfmt='ko', basefmt='k-')
@@ -163,7 +168,7 @@ class PlotData:
                                   a0: float, a1: float) -> plt.Figure:
         u_lin = np.linspace(u.min(), u.max(), 300)
         fig = self._plot_characteristic_with_model(u, y, u_lin, a0 + a1 * u_lin,
-            curve_label=f'Model: $y = {a0:.3f} + {a1:.3f}\\,u$',
+            curve_label=f'Model: $y = {_fl(a0, 3)} + {_fl(a1, 3)}\\,u$',
             title='Charakterystyka statyczna – model liniowy')
         return self._save(fig, self._dir_liniowy, 'model_liniowy_charakterystyka.png')
 
@@ -209,8 +214,8 @@ class PlotData:
         col_labels = ['Stopień N', 'MSE uczący', 'RMSE uczący', 'MSE weryf.', 'RMSE weryf.']
         table_data = [
             [f'N={r["degree"]}',
-             f'{r["mse_ucz"]:.6f}', f'{r["rmse_ucz"]:.6f}',
-             f'{r["mse_wer"]:.6f}', f'{r["rmse_wer"]:.6f}']
+             _fl(r['mse_ucz'], 6), _fl(r['rmse_ucz'], 6),
+             _fl(r['mse_wer'], 6), _fl(r['rmse_wer'], 6)]
             for r in results
         ]
         n_rows = len(results)
