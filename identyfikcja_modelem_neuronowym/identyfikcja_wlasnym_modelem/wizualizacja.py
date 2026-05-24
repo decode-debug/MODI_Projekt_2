@@ -156,8 +156,8 @@ def pokaz_architekture_3d(layer_sizes, activations):
                showbackground=True, backgroundcolor=_DARK, gridcolor='#333')
 
     fig.update_layout(
-        width=50,   # <--- TUTAJ DODANE (Zwężenie szerokości do 750px)
-        height=50,  # <--- TUTAJ DODANE (Usztywnienie wysokości, żeby kula nie stała się jajem)
+        width=1150,
+        height=500,
         title=dict(text='Architektura sieci (3D)', font=dict(size=20, color='white')),
         scene=dict(
             xaxis=dict(**_ax, title='Warstwy'),
@@ -185,7 +185,7 @@ def pokaz_postep_trenowania(loss_history, val_mse_history):
     fig.update_yaxes(gridcolor='#333', type='log', tickformat='.2e')
 
     fig.update_layout(
-        width=50, # <--- TUTAJ DODANE (Zwężenie szerokości do 750px)
+        width=1150,
         title='Postęp trenowania (skala log)',
         plot_bgcolor=_DARK, paper_bgcolor=_DARK,
         font=dict(color='white'), height=400)
