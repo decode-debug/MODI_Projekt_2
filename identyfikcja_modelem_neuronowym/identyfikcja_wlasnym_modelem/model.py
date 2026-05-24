@@ -8,9 +8,11 @@ import numpy as np
 
 class Node:
     """Jeden neuron: wagi + bias."""
-    def __init__(self, num_inputs):
+    def __init__(self, num_inputs, init_scale=None):
         self.num_inputs = num_inputs
-        self.weights = np.random.randn(num_inputs) * np.sqrt(2.0 / num_inputs)
+        if init_scale is None:
+            init_scale = np.sqrt(2.0 / num_inputs)  # He (domyślnie dla relu)
+        self.weights = np.random.randn(num_inputs) * init_scale
         self.bias = 0.0
 
 
@@ -20,7 +22,12 @@ class Layer:
         self.num_nodes = num_nodes
         self.num_inputs = num_inputs
         self.activation_name = activation_name
-        self.nodes = [Node(num_inputs) for _ in range(num_nodes)]
+        # Xavier dla sigmoid, He dla relu/linear
+        if activation_name == 'sigmoid':
+            init_scale = np.sqrt(1.0 / num_inputs)
+        else:
+            init_scale = np.sqrt(2.0 / num_inputs)
+        self.nodes = [Node(num_inputs, init_scale=init_scale) for _ in range(num_nodes)]
 
     def _get_weights(self):
         W = np.array([node.weights for node in self.nodes])

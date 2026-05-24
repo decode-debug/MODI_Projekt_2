@@ -118,7 +118,7 @@ class BayesOptymalizator:
 
         hidden_sizes = [config[f'nodes_{i+1}'] for i in range(config['num_layers'])]
         layer_sizes  = [input_size] + hidden_sizes + [output_size]
-        activations  = ['relu'] * config['num_layers'] + ['linear']
+        activations  = ['sigmoid'] * config['num_layers'] + ['linear']
 
         model   = Model(layer_sizes, activations)
         trainer = TrenujModel(model, learning_rate=config['lr'])
