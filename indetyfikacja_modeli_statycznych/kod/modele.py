@@ -1,34 +1,46 @@
 import numpy as np
 
 
+import numpy as np
+
 class MNKSolver:
     """Solver Metody Najmniejszych Kwadratów."""
 
     @staticmethod
     def solve(Phi: np.ndarray, y: np.ndarray) -> np.ndarray:
         """
-        Rozwiązuje układ normalny (Phi^T Phi) θ = Phi^T y
-        metodą eliminacji Gaussa z częściowym wyborem pivotu.
+        Rozwiązuje układ Phi * theta = y w sensie MNK (odpowiednik Phi \ y w MATLAB).
+        Wykorzystuje rozkład QR (transformacje Householdera) omijając budowę
+        układu normalnego (Phi^T Phi), co zapewnia lepszą stabilność numeryczną.
+
         Phi: macierz regresorów (N x M)
         y:   wektor wartości docelowych (N,)
         """
-        A = (Phi.T @ Phi).astype(float)
-        b = (Phi.T @ y).astype(float)
-        n = len(b)
-        # Eliminacja w przód z częściowym wyborem pivotu
-        for k in range(n):
-            pivot = k + np.argmax(np.abs(A[k:, k]))
-            A[[k, pivot]], b[[k, pivot]] = A[[pivot, k]].copy(), b[[pivot, k]].copy()
-            for i in range(k + 1, n):
-                f = A[i, k] / A[k, k]
-                A[i, k:] -= f * A[k, k:]
-                b[i]     -= f * b[k]
-        # Podstawianie wstecz
-        theta = np.zeros(n)
-        for i in range(n - 1, -1, -1):
-            theta[i] = (b[i] - A[i, i+1:] @ theta[i+1:]) / A[i, i]
-        return theta
+        R = Phi.astype(float).copy()
+        d = y.astype(float).copy()
+        N, M = R.shape
+        for k in range(M):
+            x = R[k:, k]
+            norm_x = np.linalg.norm(x)
 
+            if norm_x < 1e-12:
+                continue
+            s = 1.0 if x[0] >= 0 else -1.0
+            u1 = x[0] + s * norm_x
+            v = x / u1
+            v[0] = 1.0
+            beta = 2.0 / np.dot(v, v)
+            R[k:, k:] -= beta * np.outer(v, np.dot(v, R[k:, k:]))
+            d[k:] -= beta * v * np.dot(v, d[k:])
+
+        theta = np.zeros(M)
+        for i in range(M - 1, -1, -1):
+            if abs(R[i, i]) < 1e-12:
+                return np.full(M, np.nan)
+
+            theta[i] = (d[i] - np.dot(R[i, i+1:M], theta[i+1:])) / R[i, i]
+
+        return theta
 
 class BaseModel:
     """Wspólna logika fit / predict / evaluate dla modeli MNK."""

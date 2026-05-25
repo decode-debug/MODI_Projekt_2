@@ -9,15 +9,15 @@ from import_danych      import ImportDynamicData
 from modele_dynamiczne  import ARXModel, NARXModel
 from rysowanie          import PlotDynamic
 
-pretrained = True
+pretrained = True  # ustaw na True po pierwszym szerokim przeszukiwaniu, aby zawęzić zakres do najlepszych modeli
 
 ORDERS       = [1, 2, 3]          # rzędy modeli ARX
 if pretrained == False:  # szerokie przeszukiwanie
     NARX_ORDERS  = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50]          # rzędy dynamiki NARX
     NARX_DEGREES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 40, 50]          # stopnie wielomianów NARX
-if pretrained == True:  # zawężone wokół n=16 (najlepszy z pierwszego przeszukiwania)
-    NARX_ORDERS  = [13, 14, 15, 16, 17, 18, 19, 20]   # zawężone wokół nA=16 (najlepszy z drugiego przeszukiwania)
-    NARX_DEGREES = [3, 4, 5, 6]                       # zawężone wokół deg=4
+if pretrained == True:  # zawężone wokół n=20 (najlepszy z pierwszego przeszukiwania)
+    NARX_ORDERS  = [13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,27, 28, 29, 30]  # zawężone wokół nA=20 (najlepszy z drugiego przeszukiwania)
+    NARX_DEGREES = [2, 3, 4, 5, 6] # zawężone wokół deg=4
 
 def wyswietl_info(dane: ImportDynamicData) -> None:
     print(f"Zbiór uczący    : {dane.N_ucz} próbek")

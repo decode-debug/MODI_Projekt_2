@@ -6,7 +6,7 @@
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-05-24T17:59:45.985009</dc:date>
+    <dc:date>2026-05-25T18:40:53.217375</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -2639,7 +2639,7 @@ z
 " style="fill: #ffffff; stroke: #000000; stroke-linejoin: miter"/>
     </g>
     <g id="text_94">
-     <!-- 0,002503 -->
+     <!-- 0,002502 -->
      <g transform="translate(527.575787 657.441965) scale(0.1 -0.1)">
       <use xlink:href="#DejaVuSans-30"/>
       <use xlink:href="#DejaVuSans-2c" transform="translate(63.623047 0)"/>
@@ -2648,7 +2648,7 @@ z
       <use xlink:href="#DejaVuSans-32" transform="translate(222.65625 0)"/>
       <use xlink:href="#DejaVuSans-35" transform="translate(286.279297 0)"/>
       <use xlink:href="#DejaVuSans-30" transform="translate(349.902344 0)"/>
-      <use xlink:href="#DejaVuSans-33" transform="translate(413.525391 0)"/>
+      <use xlink:href="#DejaVuSans-32" transform="translate(413.525391 0)"/>
      </g>
     </g>
     <g id="patch_96">
@@ -2862,7 +2862,7 @@ z
 " style="fill: #ffffff; stroke: #000000; stroke-linejoin: miter"/>
     </g>
     <g id="text_105">
-     <!-- 0,052551 -->
+     <!-- 0,052556 -->
      <g transform="translate(683.009387 704.126613) scale(0.1 -0.1)">
       <use xlink:href="#DejaVuSans-30"/>
       <use xlink:href="#DejaVuSans-2c" transform="translate(63.623047 0)"/>
@@ -2871,7 +2871,7 @@ z
       <use xlink:href="#DejaVuSans-32" transform="translate(222.65625 0)"/>
       <use xlink:href="#DejaVuSans-35" transform="translate(286.279297 0)"/>
       <use xlink:href="#DejaVuSans-35" transform="translate(349.902344 0)"/>
-      <use xlink:href="#DejaVuSans-31" transform="translate(413.525391 0)"/>
+      <use xlink:href="#DejaVuSans-36" transform="translate(413.525391 0)"/>
      </g>
     </g>
    </g>
